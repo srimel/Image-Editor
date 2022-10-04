@@ -37,6 +37,7 @@
  ** DEALINGS IN THE SOFTWARE.
  **/
 
+
 /*
 ** libtarga.c -- routines for reading targa files.
 */
@@ -222,10 +223,10 @@ void * tga_load( const char * filename,
 
     ubyte * colormap = NULL;
 
-    //***********************************************************************
+    //***************************************************************
     // Add by Yu-Chi because of variable initialization.
     // Add all = 0 to all the following variables
-    //***********************************************************************
+    //**************************************************************
 
 
     ubyte cmap_bytes_entry = 0;
