@@ -8,3 +8,9 @@ Debug/**
 *.ipch
 *.ipch
 *.ipch
+Debug/Project 1.exe
+Debug/Project 1.pdb
+.vs/Project 1/v16/ipch/AutoPCH/58bccc01490520ee/LIBTARGA.ipch
+.vs/Project 1/v16/ipch/AutoPCH/4c812430bd0b1743/IMAGEWIDGET.ipch
+.vs/Project 1/v16/Browse.VC.db
+.vs/Project 1/v16/.suo
