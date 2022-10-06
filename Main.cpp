@@ -73,12 +73,35 @@ static int Arg_Callback(int argc, char *argv[], int &i)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// This function will check the endianess of the machine and output the result
+// to the standard output. - SR
+//
+///////////////////////////////////////////////////////////////////////////////
+void checkEndianess()
+{
+	int n = 1;
+    // little endian if true
+    if (*(char*)&n == 1) 
+    {
+        std::cout << "This machine is little endian." << endl;
+    }
+    else 
+    {
+        std::cout << "This machine is big endian" << endl;
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
 //      Main function.  Handle command line arguments.  If running headless, 
 //  handle the scripts given on the command line.  Otherwise create our window.
 //
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[])
 {
+    //checkEndianess(); 
+
     int script_arg;
 
     // Do argument processing. At the end of this, script_arg contains
