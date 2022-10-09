@@ -246,7 +246,11 @@ bool TargaImage::To_Grayscale()
 
         // In-Class Method, but weights adjusted to equal 1 (G+.001, B+.001)
         // Output: gray_church4.tga
-        intensity = (red * 0.2126) + (green * 0.7152) + (blue * 0.0722); 
+        //intensity = (red * 0.2126) + (green * 0.7152) + (blue * 0.0722); 
+
+        // Method from project specification
+        /* I = 0.299r + 0.587g + 0.114b */
+        intensity = (red * 0.299) + (green * 0.587) + (blue * 0.114);
 
         data[i] = intensity;
         data[i + 1] = intensity;
