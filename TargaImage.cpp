@@ -265,11 +265,137 @@ bool TargaImage::To_Grayscale()
 //  Convert the image to an 8 bit image using uniform quantization.  Return 
 //  success of operation.
 //
+/*
+	All of these operations assume that the current image has 24 bits of color 
+	information. They should still produce 24 bit images, but there should only 
+	be 256 different colors in the resulting image (so the image could be stored 
+	as an 8 bit indexed color image). Don't be concerned with what happens if you 
+	run these operations on something that is already quantized. These operations 
+	should not affect alpha - we will only test them on images with 
+	alpha = 1 (fully opaque images).
+
+    Use the uniform quantization algorithm to convert the current image from a 24 
+    bit color image to an 8 bit color image. Use 4 levels of blue, 8 levels of red, 
+    and 8 levels of green in the quantized image.
+
+*/
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Quant_Uniform()
 {
-    ClearToBlack();
-    return false;
+    if(data == NULL)
+		return false;
+
+    const char eight_space[8][2] = { {0, 31},{32, 63},{64, 95},{96, 127},{128, 159},{160, 191},{192, 223},{224, 255} };
+    // so if I divide the pixel's RGB values by 32 I get the appropriate row or index.
+
+    const char four_space[4][2] = { {0, 63},{64, 127},{128, 191},{192, 255} };
+    // and if I divide the pixel's RBG values by 64 I get the index for blue colors
+
+    int total_pixels = width * height;
+    int size = total_pixels * 4;
+
+    // These are used to tally all color totals 
+    unsigned char r_value_count[256]{}; 
+    unsigned char g_value_count[256]{}; 
+    unsigned char b_value_count[256]{}; 
+
+    unsigned char r_space[8]{};
+    unsigned char g_space[8]{};
+    unsigned char b_space[4]{};
+
+    const int rg_offset = 32;
+    const int b_offset = 64;
+
+    // counts number of colors for each channel
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        ++r_value_count[data[i]];
+        ++g_value_count[data[i + 1]];
+        ++b_value_count[data[i + 2]];
+    }
+
+    // gets the average colors for rg space
+    for (int i = 0, j = 0; i < 256; i = i + rg_offset, j++)
+    {
+        int r_sum = 0;
+        int r_count = 0;
+
+        int g_sum = 0;
+        int g_count = 0;
+
+        unsigned char r_average = 0;
+        unsigned char g_average = 0;
+
+        // counting and summing each range for rg_space
+        for (int value = i; value < (i + rg_offset); value++)
+        {
+            r_sum += (value * r_value_count[value]);
+            r_count += r_value_count[value];
+
+            g_sum += (value * g_value_count[value]);
+            g_count += g_value_count[value];
+        }
+
+        r_average = (unsigned char) (r_sum / r_count);
+        g_average = (unsigned char) (g_sum / g_count);
+
+        // save local average to build up color space
+        r_space[j] = r_average;
+        g_space[j] = g_average;
+    }
+
+    // gets the average colors for b space (new offest)
+    for (int i = 0, j = 0; i < 256; i = i + b_offset, j++)
+    {
+        int b_sum = 0;
+        int b_count = 0;
+
+        unsigned char b_average = 0;
+
+        // counting and summing each range for b_space
+        for (int value = i; value < (i + b_offset); value++)
+        {
+            b_sum += (value * b_value_count[value]);
+            b_count += b_value_count[value];
+        }
+
+        b_average = (unsigned char) (b_sum / b_count);
+
+        // save local average to build up color space
+        b_space[j] = b_average;
+    }
+
+    // Test Prints
+    std::cout << "New r_space: [";
+    for (int i = 0; i < 8; i++)
+    {
+        std::cout << (int) r_space[i];
+        if (i != 7)
+            std::cout << ", ";
+        else
+            std::cout << "]" << std::endl;
+    }
+    std::cout << "New g_space: [";
+    for (int i = 0; i < 8; i++)
+    {
+        std::cout << (int) g_space[i];
+        if (i != 7)
+            std::cout << ", ";
+        else
+            std::cout << "]" << std::endl;
+    }
+    std::cout << "New b_space: [";
+    for (int i = 0; i < 4; i++)
+    {
+        std::cout << (int) b_space[i];
+        if (i != 3)
+            std::cout << ", ";
+        else
+            std::cout << "]" << std::endl;
+    }
+
+
+    return true;
 }// Quant_Uniform
 
 
