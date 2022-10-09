@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# My little corner of ignore
+.~lock.gray_chruch1.tga#
+.~lock.gray_chruch2.tga#
+*.tga
+
 # User-specific files
 *.rsuser
 *.suo
