@@ -8,6 +8,7 @@
 .~lock.gray_chruch2.tga#
 *.tga
 *.vcxproj.user
+clean/
 
 # User-specific files
 *.rsuser
