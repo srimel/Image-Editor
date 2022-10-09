@@ -213,8 +213,46 @@ TargaImage* TargaImage::Load_Image(char *filename)
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::To_Grayscale()
 {
-    ClearToBlack();
-    return false;
+    if (data == NULL)
+        return false;
+
+    int total_pixels = width * height;
+    int size = total_pixels * 4; // RGBA
+
+    unsigned char red = 0;
+    unsigned char blue = 0;
+    unsigned char green = 0;
+    unsigned char intensity = 0;
+
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        red = data[i];
+        blue = data[i + 1];
+        green = data[i + 2];
+
+        /* Currently testing out different grayscale strategies */
+
+        // In-Class Method:
+        // Ouput: gray_chruch1.tga
+        //intensity = (red * 0.2126) + (green * 0.7151) + (blue * 0.0721); 
+
+        // Average method:
+        // Output: gray_church2.tga
+        //intensity = (red + green + blue) / 3;
+
+        // Lumunosity method: 
+        // Output: gray_church3.tga
+        //intensity = ((red * 0.21) + (green * 0.72) + (blue * 0.071)) / 3; 
+
+        // In-Class Method, but weights adjusted to equal 1 (G+.001, B+.001)
+        // Output: gray_church4.tga
+        intensity = (red * 0.2126) + (green * 0.7152) + (blue * 0.0722); 
+
+        data[i] = intensity;
+        data[i + 1] = intensity;
+        data[i + 2] = intensity;
+    }
+    return true;
 }// To_Grayscale
 
 
