@@ -209,6 +209,11 @@ TargaImage* TargaImage::Load_Image(char *filename)
 //      Convert image to grayscale.  Red, green, and blue channels should all 
 //  contain grayscale value.  Alpha channel shoould be left unchanged.  Return
 //  success of operation.
+/*
+    Use the formula I = 0.299r + 0.587g + 0.114b to convert color images to grayscale. 
+    This will be a key pre-requisite for many other operations. This operation should 
+    not affect alpha in any way.
+*/
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::To_Grayscale()
@@ -227,31 +232,14 @@ bool TargaImage::To_Grayscale()
     for (int i = 0; i < (size - 4); i = i + 4)
     {
         red = data[i];
-        blue = data[i + 1];
-        green = data[i + 2];
+        green = data[i + 1];
+        blue = data[i + 2];
 
-        /* Currently testing out different grayscale strategies */
-
-        // In-Class Method:
-        // Ouput: gray_chruch1.tga
-        //intensity = (red * 0.2126) + (green * 0.7151) + (blue * 0.0721); 
-
-        // Average method:
-        // Output: gray_church2.tga
-        //intensity = (red + green + blue) / 3;
-
-        // Lumunosity method: 
-        // Output: gray_church3.tga
-        //intensity = ((red * 0.21) + (green * 0.72) + (blue * 0.071)) / 3; 
-
-        // In-Class Method, but weights adjusted to equal 1 (G+.001, B+.001)
-        // Output: gray_church4.tga
-        //intensity = (red * 0.2126) + (green * 0.7152) + (blue * 0.0722); 
-
-        // Method from project specification
+        // Method from project specification: Weighted average
         /* I = 0.299r + 0.587g + 0.114b */
         intensity = (red * 0.299) + (green * 0.587) + (blue * 0.114);
 
+        // R = G = B = gray
         data[i] = intensity;
         data[i + 1] = intensity;
         data[i + 2] = intensity;
@@ -375,40 +363,34 @@ bool TargaImage::Quant_Uniform()
         data[i + 2] = b_space[b];
     }
 
-
     // Uncomment to print new color spaces to conosole.
-    /*
-    std::cout << "New r_space: [";
-    for (int i = 0; i < 8; i++)
-    {
-        std::cout << (int) r_space[i];
-        if (i != 7)
-            std::cout << ", ";
-        else
-            std::cout << "]" << std::endl;
-    }
-    std::cout << "New g_space: [";
-    for (int i = 0; i < 8; i++)
-    {
-        std::cout << (int) g_space[i];
-        if (i != 7)
-            std::cout << ", ";
-        else
-            std::cout << "]" << std::endl;
-    }
-    std::cout << "New b_space: [";
-    for (int i = 0; i < 4; i++)
-    {
-        std::cout << (int) b_space[i];
-        if (i != 3)
-            std::cout << ", ";
-        else
-            std::cout << "]" << std::endl;
-    }
-    */
+		/*
+		std::cout << "New R space: ";
+		LogColorSpace(r_space, 8);
+
+		std::cout << "New G space: ";
+		LogColorSpace(g_space, 8);
+
+		std::cout << "New B space: ";
+		LogColorSpace(b_space, 4);
+		*/
 
     return true;
 }// Quant_Uniform
+
+// Prints space array typecasted as ints to the console. 
+void TargaImage::LogColorSpace(const unsigned char* space, const int size) const
+{
+    std::cout << "[";
+    for (int i = 0; i < size; i++)
+    {
+        std::cout << (int) space[i];
+        if (i != (size - 1))
+            std::cout << ", ";
+        else
+            std::cout << "]" << std::endl;
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -891,6 +873,7 @@ void TargaImage::Paint_Stroke(const Stroke& s) {
       }
    }
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

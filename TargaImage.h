@@ -73,13 +73,15 @@ class TargaImage
         void RGBA_To_RGB(unsigned char *rgba, unsigned char *rgb);
 
         // reverse the rows of the image, some targas are stored bottom to top
-	TargaImage* Reverse_Rows(void);
+		TargaImage* Reverse_Rows(void);
 
-	// clear image to all black
+		// clear image to all black
         void ClearToBlack();
 
-	// Draws a filled circle according to the stroke data
+		// Draws a filled circle according to the stroke data
         void Paint_Stroke(const Stroke& s);
+
+        void LogColorSpace(const unsigned char* space, const int size) const;
 
     // members
     public:
