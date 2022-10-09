@@ -285,12 +285,6 @@ bool TargaImage::Quant_Uniform()
     if(data == NULL)
 		return false;
 
-    const char eight_space[8][2] = { {0, 31},{32, 63},{64, 95},{96, 127},{128, 159},{160, 191},{192, 223},{224, 255} };
-    // so if I divide the pixel's RGB values by 32 I get the appropriate row or index.
-
-    const char four_space[4][2] = { {0, 63},{64, 127},{128, 191},{192, 255} };
-    // and if I divide the pixel's RBG values by 64 I get the index for blue colors
-
     int total_pixels = width * height;
     int size = total_pixels * 4;
 
@@ -299,6 +293,7 @@ bool TargaImage::Quant_Uniform()
     unsigned char g_value_count[256]{}; 
     unsigned char b_value_count[256]{}; 
 
+    // New color spaces (256 colors)
     unsigned char r_space[8]{};
     unsigned char g_space[8]{};
     unsigned char b_space[4]{};
@@ -365,7 +360,24 @@ bool TargaImage::Quant_Uniform()
         b_space[j] = b_average;
     }
 
-    // Test Prints
+    // Applies the uniform quantization 
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        r = (int) (data[i] / rg_offset);
+        g = (int) (data[i + 1] / rg_offset);
+        b = (int) (data[i + 2] / b_offset);
+
+        data[i] = r_space[r];
+        data[i + 1] = g_space[g];
+        data[i + 2] = b_space[b];
+    }
+
+
+    // Uncomment to print new color spaces to conosole.
+    /*
     std::cout << "New r_space: [";
     for (int i = 0; i < 8; i++)
     {
@@ -393,7 +405,7 @@ bool TargaImage::Quant_Uniform()
         else
             std::cout << "]" << std::endl;
     }
-
+    */
 
     return true;
 }// Quant_Uniform
