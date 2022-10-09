@@ -1,0 +1,17 @@
+load clean/colors-for-bw.tga
+gray
+diff result/colors-for-bw-gray.tga
+save output/gray_diff.tga
+
+load clean/church.tga
+quant-unif
+diff result/church-quant-unif.tga
+save output/quant-unif_diff1.tga
+
+load clean/wiz.tga
+quant-unif
+diff result/wiz-quant-unif.tga
+save output/wiz-unif_diff1.tga
+
+end
+
