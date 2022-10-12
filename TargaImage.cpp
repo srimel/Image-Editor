@@ -397,6 +397,16 @@ void TargaImage::LogColorSpace(const unsigned char* space, const int size) const
 //
 //      Convert the image to an 8 bit image using populosity quantization.  
 //  Return success of operation.
+/*
+        Use the populosity algorithm to convert the current 24 bit color image 
+        to an 8 bit color image. Before building the color usage histogram, do 
+        a uniform quantization step down to 32 levels of each primary. This gives 
+        32 x 32 x 32 = 32768 possible colors. Then find the 256 most popular colors, 
+        then map the original colors onto their closest chosen color. To find the 
+        closest color, use the euclidean (L2) distance in RGB space. If (r1,g1,b1) 
+        and (r2,g2,b2) are the colors, use sqrt((r1-r2)^2 + (g1-g2)^2 + (b1-b2)^2) 
+        suitably converted into C++ code.
+*/
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Quant_Populosity()
