@@ -364,7 +364,6 @@ bool TargaImage::Quant_Uniform()
     }
 
     // Uncomment to print new color spaces to conosole.
-		/*
 		std::cout << "New R space: ";
 		LogColorSpace(r_space, 8);
 
@@ -373,7 +372,6 @@ bool TargaImage::Quant_Uniform()
 
 		std::cout << "New B space: ";
 		LogColorSpace(b_space, 4);
-		*/
 
     return true;
 }// Quant_Uniform
@@ -406,13 +404,123 @@ void TargaImage::LogColorSpace(const unsigned char* space, const int size) const
         closest color, use the euclidean (L2) distance in RGB space. If (r1,g1,b1) 
         and (r2,g2,b2) are the colors, use sqrt((r1-r2)^2 + (g1-g2)^2 + (b1-b2)^2) 
         suitably converted into C++ code.
+
+    // 1. Do a uniform-quant step down to 32 levels of each primary color. 
+    // 2. Find 256 most popular colors
+    // 3. Map original colors onto closest chosen color
 */
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Quant_Populosity()
 {
-    ClearToBlack();
-    return false;
+    if(data == NULL)
+		return false;
+
+    int total_pixels = width * height;
+    int size = total_pixels * 4;
+
+    // Each index represents a color value, and each element represents that
+    // color's count in the current image.
+    unsigned char r_value_count[256]{}; 
+    unsigned char g_value_count[256]{}; 
+    unsigned char b_value_count[256]{}; 
+
+    // 32 levels for each primary color
+    unsigned char r_space[32]{};
+    unsigned char g_space[32]{};
+    unsigned char b_space[32]{};
+
+    // sliding window for taking the average over value_count arrays
+    const int rgb_offset = 8;
+
+    // counts number of colors for each channel
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        ++r_value_count[data[i]];
+        ++g_value_count[data[i + 1]];
+        ++b_value_count[data[i + 2]];
+        // i + 3 == alpha channel, so we don't touch 
+    }
+
+    // Traverses the 256 rgb_value_count arrays and takes a sliding
+    // average across with a radius of rbg_offset.
+    for (int i = 0, j = 0; i < 256; i = i + rgb_offset, j++)
+    {
+        int r_sum = 0;
+        int r_count = 0;
+
+        int g_sum = 0;
+        int g_count = 0;
+
+        int b_sum = 0;
+        int b_count = 0;
+
+        unsigned char r_average = 0;
+        unsigned char g_average = 0;
+        unsigned char b_average = 0;
+
+        // counts and sums each channel within sliding window
+        for (int value = i; value < (i + rgb_offset); value++)
+        {
+            r_sum += (value * r_value_count[value]);
+            r_count += r_value_count[value];
+
+            g_sum += (value * g_value_count[value]);
+            g_count += g_value_count[value];
+
+            b_sum += (value * b_value_count[value]);
+            b_count += b_value_count[value];
+        }
+
+        // calculate the average from traversing window
+        r_average = (unsigned char) (r_sum / r_count);
+        g_average = (unsigned char) (g_sum / g_count);
+        b_average = (unsigned char) (b_sum / b_count);
+
+        // save local average to build up color space
+        r_space[j] = r_average;
+        g_space[j] = g_average;
+        b_space[j] = b_average;
+    }
+
+    // Applies the uniform quantization 
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        // sine the rgb_space is quantizied to 32 spaces if we divide
+        // the original image data by the rgb_offset (32) then we get
+        // the index for the appropriate color to reassign.
+        r = (int) (data[i] / rgb_offset);
+        g = (int) (data[i + 1] / rgb_offset);
+        b = (int) (data[i + 2] / rgb_offset);
+
+        data[i] = r_space[r];
+        data[i + 1] = g_space[g];
+        data[i + 2] = b_space[b];
+        // data[i+3] is the alpha channel
+    }
+
+    // Uncomment to print new color spaces to conosole.
+    /*
+    std::cout << "New R space: ";
+	LogColorSpace(r_space, 32);
+
+	std::cout << "New G space: ";
+	LogColorSpace(g_space, 32);
+
+	std::cout << "New B space: ";
+	LogColorSpace(b_space, 32);
+    */
+
+
+    // Now we have quantizied to 32 levels of RGB!
+
+    // Now we need to find the 256 most popular colors...
+
+
+    return true;
 }// Quant_Populosity
 
 
