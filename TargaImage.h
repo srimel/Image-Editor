@@ -83,6 +83,11 @@ class TargaImage
 
         void LogColorSpace(const unsigned char* space, const int size) const;
 
+        // traverse the color space until you find data, returns index of colorspace
+        int GetReducedColorIndex(const unsigned char cspace[], const int csize, const unsigned char data) const;
+        int GetSumOfCounts(const unsigned char counts[], const int size) const;
+        void getPopColors(unsigned char new_space[], const int ns_size, const unsigned char counts[], const int c_size, const unsigned char color_space[]);
+
     // members
     public:
         int		width;	    // width of the image in pixels

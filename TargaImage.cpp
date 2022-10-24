@@ -421,14 +421,22 @@ bool TargaImage::Quant_Populosity()
 
     // Each index represents a color value, and each element represents that
     // color's count in the current image.
-    unsigned char r_value_count[256]{}; 
-    unsigned char g_value_count[256]{}; 
-    unsigned char b_value_count[256]{}; 
+    unsigned char r_value_count_256[256]{}; 
+    unsigned char g_value_count_256[256]{}; 
+    unsigned char b_value_count_256[256]{}; 
 
     // 32 levels for each primary color
-    unsigned char r_space[32]{};
-    unsigned char g_space[32]{};
-    unsigned char b_space[32]{};
+    unsigned char r_space_32[32]{};
+    unsigned char g_space_32[32]{};
+    unsigned char b_space_32[32]{};
+
+    std::cout << "Initialized rgb space 32 size array" << std::endl;
+    std::cout << "OG R space: ";
+	LogColorSpace(r_space_32, 32);
+	std::cout << "OG G space: ";
+	LogColorSpace(g_space_32, 32);
+	std::cout << "OG B space: ";
+	LogColorSpace(b_space_32, 32);
 
     // sliding window for taking the average over value_count arrays
     const int rgb_offset = 8;
@@ -436,9 +444,9 @@ bool TargaImage::Quant_Populosity()
     // counts number of colors for each channel
     for (int i = 0; i < (size - 4); i = i + 4)
     {
-        ++r_value_count[data[i]];
-        ++g_value_count[data[i + 1]];
-        ++b_value_count[data[i + 2]];
+        ++r_value_count_256[data[i]];
+        ++g_value_count_256[data[i + 1]];
+        ++b_value_count_256[data[i + 2]];
         // i + 3 == alpha channel, so we don't touch 
     }
 
@@ -460,16 +468,17 @@ bool TargaImage::Quant_Populosity()
         unsigned char b_average = 0;
 
         // counts and sums each channel within sliding window
+        // values are the indices of the 256 channel count arrays
         for (int value = i; value < (i + rgb_offset); value++)
         {
-            r_sum += (value * r_value_count[value]);
-            r_count += r_value_count[value];
+            r_sum += (value * r_value_count_256[value]);
+            r_count += r_value_count_256[value];
 
-            g_sum += (value * g_value_count[value]);
-            g_count += g_value_count[value];
+            g_sum += (value * g_value_count_256[value]);
+            g_count += g_value_count_256[value];
 
-            b_sum += (value * b_value_count[value]);
-            b_count += b_value_count[value];
+            b_sum += (value * b_value_count_256[value]);
+            b_count += b_value_count_256[value];
         }
 
         // calculate the average from traversing window
@@ -478,15 +487,18 @@ bool TargaImage::Quant_Populosity()
         b_average = (unsigned char) (b_sum / b_count);
 
         // save local average to build up color space
-        r_space[j] = r_average;
-        g_space[j] = g_average;
-        b_space[j] = b_average;
+        r_space_32[j] = r_average;
+        g_space_32[j] = g_average;
+        b_space_32[j] = b_average;
     }
 
-    // Applies the uniform quantization 
+    // Applies the uniform quantization:
+    //   This needs to be applied to a copy of the image, since
+    //   we need to perserve the original color values for the end step.
     int r = 0;
     int g = 0;
     int b = 0;
+    unsigned char* copy_image = new unsigned char[size];
     for (int i = 0; i < (size - 4); i = i + 4)
     {
         // sine the rgb_space is quantizied to 32 spaces if we divide
@@ -496,32 +508,208 @@ bool TargaImage::Quant_Populosity()
         g = (int) (data[i + 1] / rgb_offset);
         b = (int) (data[i + 2] / rgb_offset);
 
-        data[i] = r_space[r];
-        data[i + 1] = g_space[g];
-        data[i + 2] = b_space[b];
-        // data[i+3] is the alpha channel
+        copy_image[i] = r_space_32[r];
+        copy_image[i + 1] = g_space_32[g];
+        copy_image[i + 2] = b_space_32[b];
+        copy_image[i + 3] = data[i+3]; // data[i+3] is the alpha channel
     }
 
-    // Uncomment to print new color spaces to conosole.
-    /*
+    std::cout << "Printing 32-level color spaces" << std::endl;
     std::cout << "New R space: ";
-	LogColorSpace(r_space, 32);
-
+	LogColorSpace(r_space_32, 32);
 	std::cout << "New G space: ";
-	LogColorSpace(g_space, 32);
-
+	LogColorSpace(g_space_32, 32);
 	std::cout << "New B space: ";
-	LogColorSpace(b_space, 32);
+	LogColorSpace(b_space_32, 32);
+
+    /*
+        TODO:
+                1. apply uniform quant to a copy of image data instead [done]
+                2. count the number of colors wrt 32 level RGB channels [done]
+                3. find the least popular channel [done]
+                4. make new array with 4 most pop colors from least popular channel [done]
+                5. make new arrays with 8 most pop colors from other channels [done]
+                     - Now we have 256 color space to quantize the OG image to
+                6. For each pixel for each value in new color spaces, find closest 
+                   euclidean distance to reduce color space and reassign that pixel
     */
 
+    // make "histogram" of each of these channels
+    unsigned char r_value_count_32[32]{};
+    unsigned char g_value_count_32[32]{};
+    unsigned char b_value_count_32[32]{};
 
-    // Now we have quantizied to 32 levels of RGB!
+    std::cout << "Print test of initialized 32 element count arrays" << std::endl;
+    LogColorSpace(r_value_count_32, 32);
+    LogColorSpace(g_value_count_32, 32);
+    LogColorSpace(b_value_count_32, 32);
 
-    // Now we need to find the 256 most popular colors...
+    // count the number of intensities for each channel in copy_image
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        // Get the index of the 32 level colorspace
+        int r = GetReducedColorIndex(r_space_32, 32, copy_image[i]);
+        int g = GetReducedColorIndex(g_space_32, 32, copy_image[i+1]);
+        int b = GetReducedColorIndex(b_space_32, 32, copy_image[i+2]);
+        // i+3 is the alpha channel
+
+        // error
+        if (r < 0 || g < 0 || b < 0)
+        {
+            return false;
+        }
+
+        ++r_value_count_32[r];
+        ++g_value_count_32[g];
+        ++b_value_count_32[b];
+    }
+
+    int sum_r_count_32 = GetSumOfCounts(r_value_count_32, 32);
+    int sum_g_count_32 = GetSumOfCounts(g_value_count_32, 32);
+    int sum_b_count_32 = GetSumOfCounts(b_value_count_32, 32);
+
+    std::cout << "After counting all colors in reduced space" << std::endl;
+    std::cout << "Red" << std::endl;
+    LogColorSpace(r_value_count_32, 32);
+    std::cout << "Total = " << sum_r_count_32 <<std::endl;
+
+    std::cout << "Green" << std::endl;
+    LogColorSpace(g_value_count_32, 32);
+    std::cout << "Total = " << sum_g_count_32 <<std::endl;
+
+    std::cout << "Blue" << std::endl;
+    LogColorSpace(b_value_count_32, 32);
+    std::cout << "Total = " << sum_b_count_32 <<std::endl;
+
+    // the array with the least total count only gets 4 bits
+    int least_count = 0;
+    if (sum_r_count_32 < sum_g_count_32)
+    {
+        if (sum_b_count_32 < sum_r_count_32)
+        {
+			least_count = sum_b_count_32;
+        }
+        else
+        {
+            least_count = sum_r_count_32;
+        }
+    }
+    else
+    {
+        if (sum_b_count_32 < sum_g_count_32)
+        {
+            least_count = sum_b_count_32;
+        }
+        else
+        {
+            least_count = sum_g_count_32;
+        }
+    }
+
+    std::cout << "Value of least = " << least_count << std::endl;
+
+    // Time to pick the 256 most popular colors..
+    // need to decide how many bits to allocate for each color
+    // the channel with the least total of counts will get 4 bits
+    // the other two will get 8 bits.
+
+    // dynamically allocated based on which channel has least counts
+    unsigned char* r_space_x = nullptr;
+    unsigned char* g_space_x = nullptr;
+    unsigned char* b_space_x = nullptr;
+
+    // holds the size of the dynamic allocation arrays
+    int size_rx = 8;
+    int size_gx = 8;
+    int size_bx = 8;
 
 
+    // 4 bits for array with least count
+    if (sum_r_count_32 == least_count)
+    {
+        size_rx = 4;
+    }
+    else if (sum_g_count_32 == least_count)
+    {
+        size_gx = 4;
+    }
+    else
+    {
+        size_bx = 4;
+    }
+
+    // only one of these should be size 4, the other two size 8
+    r_space_x = new unsigned char[size_rx];
+    g_space_x = new unsigned char[size_gx];
+    b_space_x = new unsigned char[size_bx];
+
+    getPopColors(r_space_x, size_rx, r_value_count_32, 32, r_space_32);
+    getPopColors(g_space_x, size_gx, g_value_count_32, 32, g_space_32);
+    getPopColors(b_space_x, size_bx, b_value_count_32, 32, b_space_32);
+
+    std::cout << "New Red Color Space!" << std::endl;
+    LogColorSpace(r_space_x, size_rx);
+    std::cout << "New Green Color Space!" << std::endl;
+    LogColorSpace(g_space_x, size_gx);
+    std::cout << "New Blue Color Space!" << std::endl;
+    LogColorSpace(b_space_x, size_bx);
+
+
+    // TODO: Left off here!
+	// For each pixel for each value in new color spaces, find closest 
+	// euclidean distance to reduce color space and reassign that pixel
+
+
+
+
+    delete[] copy_image;
+    delete[] r_space_x;
+    delete[] g_space_x;
+    delete[] b_space_x;
     return true;
 }// Quant_Populosity
+
+// sorts the count list and copies the top 8 color intensities into the new_space[]
+void TargaImage::getPopColors(unsigned char new_space[], const int ns_size, const unsigned char counts[], const int c_size, const unsigned char color_space[])
+{
+    std::vector<unsigned char> counts_copy (c_size);
+    std::copy(counts, counts + c_size, counts_copy.begin());
+    std::sort(counts_copy.begin(), counts_copy.end());
+    
+    
+    int j = 0;
+    for (int i = 0; i < c_size; i++)
+    {
+        // count array indices are calculated and new_space assigned with most popular color space values
+        if (i >= (c_size - ns_size))
+        {
+            int index = GetReducedColorIndex(counts, 32, counts_copy[i]);
+            new_space[j] = color_space[index];
+            j++;
+        }
+    }
+}
+
+// finds the index of the color that matches data, return -1 if no match is found
+int TargaImage::GetReducedColorIndex(const unsigned char cspace[], const int csize, const unsigned char data) const
+{
+    for (int i = 0; i < csize; i++)
+    {
+        if (data == cspace[i])
+            return i;
+    }
+    return -1;
+}
+
+int TargaImage::GetSumOfCounts(const unsigned char counts[], const int size) const
+{
+    int total = 0;
+    for (int i = 0; i < size; i++)
+    {
+        total += counts[i];
+    }
+    return total;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
