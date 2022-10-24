@@ -492,6 +492,14 @@ bool TargaImage::Quant_Populosity()
         b_space_32[j] = b_average;
     }
 
+    std::cout << "Printing 32-level color spaces" << std::endl;
+    std::cout << "New R space: ";
+	LogColorSpace(r_space_32, 32);
+	std::cout << "New G space: ";
+	LogColorSpace(g_space_32, 32);
+	std::cout << "New B space: ";
+	LogColorSpace(b_space_32, 32);
+
     // Applies the uniform quantization:
     //   This needs to be applied to a copy of the image, since
     //   we need to perserve the original color values for the end step.
@@ -514,13 +522,68 @@ bool TargaImage::Quant_Populosity()
         copy_image[i + 3] = data[i+3]; // data[i+3] is the alpha channel
     }
 
-    std::cout << "Printing 32-level color spaces" << std::endl;
-    std::cout << "New R space: ";
-	LogColorSpace(r_space_32, 32);
-	std::cout << "New G space: ";
-	LogColorSpace(g_space_32, 32);
-	std::cout << "New B space: ";
-	LogColorSpace(b_space_32, 32);
+    std::vector<color> histogram;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        color current(copy_image[i], copy_image[i + 1], copy_image[i + 2]);
+        current.increment(); // counts itself
+        if (!histogram.empty())
+        {
+            bool found = false;
+            for (auto it = histogram.begin(); it != histogram.end() && !found; it++)
+            {
+                if (it->checkSame(current))
+                {
+                    it->increment();
+                    found = true;
+                }
+            }
+            if (!found)
+            {
+                histogram.push_back(current);
+            }
+        }
+        else
+        {
+            histogram.push_back(current);
+        }
+    }
+
+    // sorts the histogram in non-increasing order
+    std::sort(histogram.begin(), histogram.end(), compareColors);
+
+    for (int i = 0; i < (size - 4); i = i + 4) // loops through original pixels from data image
+    {
+		double min_euclidian = 16000000.0;
+        unsigned char nr = 0, ng = 0, nb = 0;
+        for (int j = 0; j < 256; j++) // loops through historgram 256 most pop colors
+        {
+			double result = getDistance(histogram[j].r, histogram[j].g, histogram[j].b, data[i], data[i + 1], data[i + 2]);
+			if (result < min_euclidian)
+			{
+				min_euclidian = result;
+                nr = histogram[j].r;
+                ng = histogram[j].g;
+                nb = histogram[j].b;
+			}
+
+        }
+        data[i] = nr;
+        data[i+1] = ng;
+        data[i+2] = nb;
+
+    }
+
+
+    // prints out the vector to check
+    /*
+    for (auto it = histogram.begin(); it != histogram.end(); it++)
+    {
+        it->printColor();
+    }
+    */
+
+
 
     /*
         TODO:
@@ -532,7 +595,6 @@ bool TargaImage::Quant_Populosity()
                      - Now we have 256 color space to quantize the OG image to
                 6. For each pixel for each value in new color spaces, find closest 
                    euclidean distance to reduce color space and reassign that pixel
-    */
 
     // make "histogram" of each of these channels
     unsigned char r_value_count_32[32]{};
@@ -685,11 +747,12 @@ bool TargaImage::Quant_Populosity()
         data[i+2] = b_space_x[bi];
     }
 
-
-    delete[] copy_image;
     delete[] r_space_x;
     delete[] g_space_x;
     delete[] b_space_x;
+    */
+
+    delete[] copy_image;
     return true;
 }// Quant_Populosity
 
@@ -739,6 +802,39 @@ int TargaImage::GetSumOfCounts(const unsigned char counts[], const int size) con
         total += counts[i];
     }
     return total;
+}
+
+color::color(unsigned char red, unsigned char green, unsigned char blue): r(red), g(green), b(blue), count(0)
+{}
+
+bool color::checkSame(const color & to_check) const
+{
+    if (to_check.r == r)
+    {
+        if (to_check.g == g)
+        {
+            if (to_check.b == b)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void color::increment()
+{
+    count++;
+}
+
+void color::printColor() const
+{
+    std::cout << "(" << (int)r << ", " << (int)g << ", " << (int)b << ") " << "Count: " << count << std::endl;
+}
+
+bool compareColors(const color & lhs, const color & rhs)
+{
+    return lhs.count > rhs.count;
 }
 
 
