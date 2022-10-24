@@ -108,6 +108,19 @@ public:
    unsigned char r, g, b, a;	// Color
 };
 
+struct color
+{
+    color(unsigned char red=0, unsigned char green=0, unsigned char blue=0);
+    bool checkSame(const color & to_check) const;
+    void increment();
+    void printColor() const;
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    int count;
+};
+
+bool compareColors(const color& lhs, const color& rhs);
 
 #endif
 
