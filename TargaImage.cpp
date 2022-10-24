@@ -655,11 +655,35 @@ bool TargaImage::Quant_Populosity()
     LogColorSpace(b_space_x, size_bx);
 
 
-    // TODO: Left off here!
 	// For each pixel for each value in new color spaces, find closest 
 	// euclidean distance to reduce color space and reassign that pixel
-
-
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+		// steps through 256 most popular colors, find min distance
+		double min_euclidian = 16000000.0;
+		int ri = 0, gi = 0, bi = 0; // used to index into rgb_space_x arrays
+		for (int r = 0; r < size_rx; r++)
+		{
+			for (int g = 0; g < size_gx; g++)
+			{
+				for (int b = 0; b < size_bx; b++)
+				{
+					// calc distance, check if min
+                    double result = getDistance(r_space_x[r], g_space_x[g], b_space_x[b], data[i], data[i + 1], data[i + 2]);
+                    if (result < min_euclidian)
+                    {
+                        min_euclidian = result;
+                        ri = r;
+                        gi = g;
+                        bi = b;
+                    }
+				}
+			}
+		}
+        data[i] = r_space_x[ri];
+        data[i+1] = g_space_x[gi];
+        data[i+2] = b_space_x[bi];
+    }
 
 
     delete[] copy_image;
@@ -668,6 +692,12 @@ bool TargaImage::Quant_Populosity()
     delete[] b_space_x;
     return true;
 }// Quant_Populosity
+
+// Calculates: sqrt((r1-r2)^2 + (g1-g2)^2 + (b1-b2)^2)
+double TargaImage::getDistance(unsigned char r1, unsigned char g1, unsigned char b1, const unsigned char r2, const unsigned char g2, const unsigned char b2)
+{
+    return sqrt(pow(double(r1 - r2), 2.0) + pow(double(g1 - g2), 2.0) + pow(double(b1 - b2), 2.0));
+}
 
 // sorts the count list and copies the top 8 color intensities into the new_space[]
 void TargaImage::getPopColors(unsigned char new_space[], const int ns_size, const unsigned char counts[], const int c_size, const unsigned char color_space[])

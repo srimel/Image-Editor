@@ -87,6 +87,7 @@ class TargaImage
         int GetReducedColorIndex(const unsigned char cspace[], const int csize, const unsigned char data) const;
         int GetSumOfCounts(const unsigned char counts[], const int size) const;
         void getPopColors(unsigned char new_space[], const int ns_size, const unsigned char counts[], const int c_size, const unsigned char color_space[]);
+        double getDistance(unsigned char r1, unsigned char g1, unsigned char b1, const unsigned char r2, const unsigned char g2, const unsigned char b2);
 
     // members
     public:
