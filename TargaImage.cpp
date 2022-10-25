@@ -430,14 +430,6 @@ bool TargaImage::Quant_Populosity()
     unsigned char g_space_32[32]{};
     unsigned char b_space_32[32]{};
 
-    std::cout << "Initialized rgb space 32 size array" << std::endl;
-    std::cout << "OG R space: ";
-	LogColorSpace(r_space_32, 32);
-	std::cout << "OG G space: ";
-	LogColorSpace(g_space_32, 32);
-	std::cout << "OG B space: ";
-	LogColorSpace(b_space_32, 32);
-
     // sliding window for taking the average over value_count arrays
     const int rgb_offset = 8;
 
@@ -522,6 +514,8 @@ bool TargaImage::Quant_Populosity()
         copy_image[i + 3] = data[i+3]; // data[i+3] is the alpha channel
     }
 
+    std::cout << "\n\nApplying populosity algorithm...\n\nPlease wait..." << std::endl;
+
     std::vector<color> histogram;
     for (int i = 0; i < (size - 4); i = i + 4)
     {
@@ -574,183 +568,7 @@ bool TargaImage::Quant_Populosity()
 
     }
 
-
-    // prints out the vector to check
-    /*
-    for (auto it = histogram.begin(); it != histogram.end(); it++)
-    {
-        it->printColor();
-    }
-    */
-
-
-
-    /*
-        TODO:
-                1. apply uniform quant to a copy of image data instead [done]
-                2. count the number of colors wrt 32 level RGB channels [done]
-                3. find the least popular channel [done]
-                4. make new array with 4 most pop colors from least popular channel [done]
-                5. make new arrays with 8 most pop colors from other channels [done]
-                     - Now we have 256 color space to quantize the OG image to
-                6. For each pixel for each value in new color spaces, find closest 
-                   euclidean distance to reduce color space and reassign that pixel
-
-    // make "histogram" of each of these channels
-    unsigned char r_value_count_32[32]{};
-    unsigned char g_value_count_32[32]{};
-    unsigned char b_value_count_32[32]{};
-
-    std::cout << "Print test of initialized 32 element count arrays" << std::endl;
-    LogColorSpace(r_value_count_32, 32);
-    LogColorSpace(g_value_count_32, 32);
-    LogColorSpace(b_value_count_32, 32);
-
-    // count the number of intensities for each channel in copy_image
-    for (int i = 0; i < (size - 4); i = i + 4)
-    {
-        // Get the index of the 32 level colorspace
-        int r = GetReducedColorIndex(r_space_32, 32, copy_image[i]);
-        int g = GetReducedColorIndex(g_space_32, 32, copy_image[i+1]);
-        int b = GetReducedColorIndex(b_space_32, 32, copy_image[i+2]);
-        // i+3 is the alpha channel
-
-        // error
-        if (r < 0 || g < 0 || b < 0)
-        {
-            return false;
-        }
-
-        ++r_value_count_32[r];
-        ++g_value_count_32[g];
-        ++b_value_count_32[b];
-    }
-
-    int sum_r_count_32 = GetSumOfCounts(r_value_count_32, 32);
-    int sum_g_count_32 = GetSumOfCounts(g_value_count_32, 32);
-    int sum_b_count_32 = GetSumOfCounts(b_value_count_32, 32);
-
-    std::cout << "After counting all colors in reduced space" << std::endl;
-    std::cout << "Red" << std::endl;
-    LogColorSpace(r_value_count_32, 32);
-    std::cout << "Total = " << sum_r_count_32 <<std::endl;
-
-    std::cout << "Green" << std::endl;
-    LogColorSpace(g_value_count_32, 32);
-    std::cout << "Total = " << sum_g_count_32 <<std::endl;
-
-    std::cout << "Blue" << std::endl;
-    LogColorSpace(b_value_count_32, 32);
-    std::cout << "Total = " << sum_b_count_32 <<std::endl;
-
-    // the array with the least total count only gets 4 bits
-    int least_count = 0;
-    if (sum_r_count_32 < sum_g_count_32)
-    {
-        if (sum_b_count_32 < sum_r_count_32)
-        {
-			least_count = sum_b_count_32;
-        }
-        else
-        {
-            least_count = sum_r_count_32;
-        }
-    }
-    else
-    {
-        if (sum_b_count_32 < sum_g_count_32)
-        {
-            least_count = sum_b_count_32;
-        }
-        else
-        {
-            least_count = sum_g_count_32;
-        }
-    }
-
-    std::cout << "Value of least = " << least_count << std::endl;
-
-    // Time to pick the 256 most popular colors..
-    // need to decide how many bits to allocate for each color
-    // the channel with the least total of counts will get 4 bits
-    // the other two will get 8 bits.
-
-    // dynamically allocated based on which channel has least counts
-    unsigned char* r_space_x = nullptr;
-    unsigned char* g_space_x = nullptr;
-    unsigned char* b_space_x = nullptr;
-
-    // holds the size of the dynamic allocation arrays
-    int size_rx = 8;
-    int size_gx = 8;
-    int size_bx = 8;
-
-
-    // 4 bits for array with least count
-    if (sum_r_count_32 == least_count)
-    {
-        size_rx = 4;
-    }
-    else if (sum_g_count_32 == least_count)
-    {
-        size_gx = 4;
-    }
-    else
-    {
-        size_bx = 4;
-    }
-
-    // only one of these should be size 4, the other two size 8
-    r_space_x = new unsigned char[size_rx];
-    g_space_x = new unsigned char[size_gx];
-    b_space_x = new unsigned char[size_bx];
-
-    getPopColors(r_space_x, size_rx, r_value_count_32, 32, r_space_32);
-    getPopColors(g_space_x, size_gx, g_value_count_32, 32, g_space_32);
-    getPopColors(b_space_x, size_bx, b_value_count_32, 32, b_space_32);
-
-    std::cout << "New Red Color Space!" << std::endl;
-    LogColorSpace(r_space_x, size_rx);
-    std::cout << "New Green Color Space!" << std::endl;
-    LogColorSpace(g_space_x, size_gx);
-    std::cout << "New Blue Color Space!" << std::endl;
-    LogColorSpace(b_space_x, size_bx);
-
-
-	// For each pixel for each value in new color spaces, find closest 
-	// euclidean distance to reduce color space and reassign that pixel
-    for (int i = 0; i < (size - 4); i = i + 4)
-    {
-		// steps through 256 most popular colors, find min distance
-		double min_euclidian = 16000000.0;
-		int ri = 0, gi = 0, bi = 0; // used to index into rgb_space_x arrays
-		for (int r = 0; r < size_rx; r++)
-		{
-			for (int g = 0; g < size_gx; g++)
-			{
-				for (int b = 0; b < size_bx; b++)
-				{
-					// calc distance, check if min
-                    double result = getDistance(r_space_x[r], g_space_x[g], b_space_x[b], data[i], data[i + 1], data[i + 2]);
-                    if (result < min_euclidian)
-                    {
-                        min_euclidian = result;
-                        ri = r;
-                        gi = g;
-                        bi = b;
-                    }
-				}
-			}
-		}
-        data[i] = r_space_x[ri];
-        data[i+1] = g_space_x[gi];
-        data[i+2] = b_space_x[bi];
-    }
-
-    delete[] r_space_x;
-    delete[] g_space_x;
-    delete[] b_space_x;
-    */
+    std::cout << "\nQuantization complete. Enjoy your new image :)" << std::endl;
 
     delete[] copy_image;
     return true;
