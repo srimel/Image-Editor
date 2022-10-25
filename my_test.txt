@@ -13,5 +13,10 @@ quant-unif
 diff result/wiz-quant-unif.tga
 save output/wiz-unif_diff1.tga
 
+load clean/wiz.tga
+quant-pop
+diff result/wiz-quant-pop.tga
+save output/wiz-pop-diff1.tga
+
 end
 

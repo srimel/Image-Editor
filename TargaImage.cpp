@@ -580,48 +580,6 @@ double TargaImage::getDistance(unsigned char r1, unsigned char g1, unsigned char
     return sqrt(pow(double(r1 - r2), 2.0) + pow(double(g1 - g2), 2.0) + pow(double(b1 - b2), 2.0));
 }
 
-// sorts the count list and copies the top 8 color intensities into the new_space[]
-void TargaImage::getPopColors(unsigned char new_space[], const int ns_size, const unsigned char counts[], const int c_size, const unsigned char color_space[])
-{
-    std::vector<unsigned char> counts_copy (c_size);
-    std::copy(counts, counts + c_size, counts_copy.begin());
-    std::sort(counts_copy.begin(), counts_copy.end());
-    
-    
-    int j = 0;
-    for (int i = 0; i < c_size; i++)
-    {
-        // count array indices are calculated and new_space assigned with most popular color space values
-        if (i >= (c_size - ns_size))
-        {
-            int index = GetReducedColorIndex(counts, 32, counts_copy[i]);
-            new_space[j] = color_space[index];
-            j++;
-        }
-    }
-}
-
-// finds the index of the color that matches data, return -1 if no match is found
-int TargaImage::GetReducedColorIndex(const unsigned char cspace[], const int csize, const unsigned char data) const
-{
-    for (int i = 0; i < csize; i++)
-    {
-        if (data == cspace[i])
-            return i;
-    }
-    return -1;
-}
-
-int TargaImage::GetSumOfCounts(const unsigned char counts[], const int size) const
-{
-    int total = 0;
-    for (int i = 0; i < size; i++)
-    {
-        total += counts[i];
-    }
-    return total;
-}
-
 color::color(unsigned char red, unsigned char green, unsigned char blue): r(red), g(green), b(blue), count(0)
 {}
 
@@ -659,12 +617,54 @@ bool compareColors(const color & lhs, const color & rhs)
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Dither the image using a threshold of 1/2.  Return success of operation.
-//
+
+//      Dither an image to black and white using threshold dithering with a threshold of 0.5.	
+
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Dither_Threshold()
 {
-    ClearToBlack();
-    return false;
+    // first turn image into grayscale
+    To_Grayscale();
+
+    // now we need to have all gray values [0, 1.0)
+    int size = (width * height) * 4;
+
+    float* new_array = new float[size];
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        new_array[i] = data[i] / (float)256;
+        new_array[i+1] = data[i+1] / (float)256;
+        new_array[i+2] = data[i+2] / (float)256;
+        new_array[i+3] = (float) data[i+3]; // leaves alpha channel alone
+    }
+    
+    delete[] data;
+    data = nullptr;
+    data = new unsigned char[size];
+
+    float black = 255 / (float)256;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        if (new_array[i] >= 0.5)
+        {
+            // convert to black pixel
+            data[i] = 255;
+            data[i+1] = 255;
+            data[i+2] = 255;
+            data[i + 3] = (unsigned char) new_array[i + 3];
+        }
+        else
+        {
+            // convert to white pixel
+            data[i] = 0;
+            data[i+1] = 0;
+            data[i+2] = 0;
+            data[i + 3] = (unsigned char) new_array[i + 3];
+        }
+    }
+
+    delete[] new_array;
+    return true;
 }// Dither_Threshold
 
 
