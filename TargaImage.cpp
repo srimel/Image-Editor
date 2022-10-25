@@ -671,11 +671,63 @@ bool TargaImage::Dither_Threshold()
 //
 //      Dither image using random dithering.  Return success of operation.
 //
+// Dither an image to black and white using random dithering. Add random values 
+// chosen uniformly from the range [-0.2,0.2], assuming that the input image 
+// intensity runs from 0 to 1 (scale appropriately). There is no easy way to match 
+// the reference result with this method, so do not try. Use either a threshold of 
+// 0.5 or the brightness preserving threshold - your choice.
+//
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Dither_Random()
 {
-    ClearToBlack();
-    return false;
+    // first turn image into grayscale
+    srand(time(0));
+
+    To_Grayscale();
+
+    // now we need to have all gray values [0, 1.0)
+    int size = (width * height) * 4;
+
+    float noise[5]{ -0.2, -0.1, 0, 0.1, 0.2 };
+
+    float* new_array = new float[size];
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        int rng = rand() % 5;
+        float added_noise = noise[rng];
+
+		new_array[i] = (data[i] / (float)256) + noise[rng];
+		new_array[i+1] = (data[i+1] / (float)256) + noise[rng];
+		new_array[i+2] = (data[i+2] / (float)256) + noise[rng];
+		new_array[i+3] = (float) data[i+3]; // leaves alpha channel alone
+    }
+    
+    delete[] data;
+    data = nullptr;
+    data = new unsigned char[size];
+
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        if (new_array[i] >= 0.5) // using 0.5 threshold
+        {
+            // convert to white pixel
+            data[i] = 255;
+            data[i+1] = 255;
+            data[i+2] = 255;
+            data[i + 3] = (unsigned char) new_array[i + 3];
+        }
+        else // new_array < 0.5
+        {
+            // convert to black pixel
+            data[i] = 0;
+            data[i+1] = 0;
+            data[i+2] = 0;
+            data[i + 3] = (unsigned char) new_array[i + 3];
+        }
+    }
+
+    delete[] new_array;
+    return true;
 }// Dither_Random
 
 
