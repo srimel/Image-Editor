@@ -834,12 +834,88 @@ bool TargaImage::Dither_Bright()
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Perform clustered differing of the image.  Return success of operation.
+// Dither an image to black and white using cluster dithering with the matrix shown below. 
+// The image pixels should be compared to a threshold that depends on the dither matrix below. 
+// The pixel should be drawn white if: I[x][y] >= mask[x%4][y%4]. The matrix is:
+//
+//   0.7500  0.3750  0.6250  0.2500
+//   0.0625  1.0000  0.8750  0.4375
+//   0.5000  0.8125  0.9375  0.1250
+//   0.1875  0.5625  0.3125  0.6875
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Dither_Cluster()
+
 {
-    ClearToBlack();
-    return false;
+
+    const int size = width * height * 4;
+
+    const int col = 4;
+    const int row = 4;
+    const int thresh_width = 16;
+    const int thresh_height = 16;
+    const int thresh_size = 16;
+    const int row_step = width * 4;
+
+    const float thresholds[col * row] {0.7500, 0.3750, 0.6250, 0.2500,
+                                       0.0625, 1.0000, 0.8750,  0.4375,
+                                       0.5000, 0.8125, 0.9375, 0.1250,
+                                       0.1875, 0.5625, 0.3125, 0.6875};
+
+    To_Grayscale();
+
+    float* new_array = new float[size];
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        new_array[i] = data[i] / (float)256;
+        new_array[i+1] = data[i+1] / (float)256;
+        new_array[i+2] = data[i+2] / (float)256;
+        new_array[i+3] = (float) data[i+3]; // leaves alpha channel alone
+    }
+
+    delete[] data;
+    data = nullptr;
+    data = new unsigned char[size];
+
+    float white = 255 / (float)256;
+
+    int thresh_index = 0;
+
+    int stop = (row_step * (row - 1)) + ((col - 1) * 4);
+    for (int i = 0; i < (size - stop);)
+    {
+        // i is used to align the threshold and image matrices
+
+        for (int j = 0; j < thresh_size; j++) // iteraotr for the threhold matrix
+        {
+            if (j && j % thresh_width == 0)
+            {
+                i = (i - thresh_width) + row_step;
+            }
+            if (new_array[i] >= thresholds[j])
+            {
+                new_array[i] = white;
+                new_array[i+1] = white;
+                new_array[i+2] = white;
+            }
+            else
+            {
+                new_array[i] = 0.0;
+                new_array[i+1] = 0.0;
+                new_array[i+2] = 0.0;
+            }
+            i = i + 4;
+        }
+        if (i % row_step != 0)
+        {
+            // move kernal to right one
+            i = i - (row_step * (row - 1));
+        }
+    }
+
+
+    delete[] new_array;
+    return true;
 }// Dither_Cluster
 
 
