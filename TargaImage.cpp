@@ -642,20 +642,19 @@ bool TargaImage::Dither_Threshold()
     data = nullptr;
     data = new unsigned char[size];
 
-    float black = 255 / (float)256;
     for (int i = 0; i < (size - 4); i = i + 4)
     {
         if (new_array[i] >= 0.5)
         {
-            // convert to black pixel
+            // convert to white pixel
             data[i] = 255;
             data[i+1] = 255;
             data[i+2] = 255;
             data[i + 3] = (unsigned char) new_array[i + 3];
         }
-        else
+        else // new_array < 0.5
         {
-            // convert to white pixel
+            // convert to black pixel
             data[i] = 0;
             data[i+1] = 0;
             data[i+2] = 0;
@@ -698,11 +697,85 @@ bool TargaImage::Dither_FS()
 //      Dither the image while conserving the average brightness.  Return 
 //  success of operation.
 //
+// Dither an image to black and white using threshold dithering with a threshold 
+// chosen to keep the average brightness constant.	
+//
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Dither_Bright()
 {
-    ClearToBlack();
-    return false;
+    To_Grayscale();
+
+    int size = (width * height) * 4;
+
+    float* new_array = new float[size];
+    float* ranked = new float[size];
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        new_array[i] = data[i] / (float)256;
+        new_array[i+1] = data[i+1] / (float)256;
+        new_array[i+2] = data[i+2] / (float)256;
+        new_array[i+3] = (float) data[i+3]; // leaves alpha channel alone
+
+        ranked[i] = data[i] / (float)256;
+        ranked[i+1] = data[i+1] / (float)256;
+        ranked[i+2] = data[i+2] / (float)256;
+        ranked[i+3] = (float) data[i+3]; // leaves alpha channel alone
+    }
+
+    delete[] data;
+    data = nullptr;
+    data = new unsigned char[size];
+
+    double total = 0.0;
+    double count = 0;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        total += (double) new_array[i];
+        count++;
+    }
+
+    double average = total / count;
+    std::cout << "Average: " << average << std::endl;
+    double percentile = 1 - average;
+    std::cout << "Percentile: " << percentile << std::endl;
+
+    int h_index = (int) ceil(percentile * (count + 1));
+    int l_index = (int) floor(percentile * (count + 1));
+    float thresh1 = ranked[h_index];
+    float thresh2 = ranked[l_index];
+    float threshold = (thresh1 + thresh2) / 2;
+    std::cout << "Threshold: " << threshold << std::endl;
+
+
+    std::sort(ranked, ranked + size);
+
+    float total2 = 0;
+    float count2 = 0;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        if (new_array[i] > threshold)
+        {
+            data[i] = 255;
+            data[i+1] = 255;
+            data[i+2] = 255;
+            data[i + 3] = (unsigned char) new_array[i + 3];
+            total2 += (float) 255;
+        }
+        else
+        {
+            data[i] = 0;
+            data[i+1] = 0;
+            data[i+2] = 0;
+            data[i + 3] = (unsigned char) new_array[i + 3];
+        }
+        count2++;
+    }
+    float average2 = total2 / count2;
+    std::cout << "Average2 = " << average2 / (float)256 << std::endl;
+
+    delete[] new_array;
+    delete[] ranked;
+    return true;
 }// Dither_Bright
 
 
