@@ -882,13 +882,15 @@ bool TargaImage::Dither_Cluster()
     int thresh_index = 0;
 
     int stop = (row_step * (row - 1)) + ((col - 1) * 4);
-    for (int i = 0; i < (size - stop);)
+    //for (int i = 0; i < (size - stop);)
+    int i = 0;
+    while(i < (size -stop))
     {
         // i is used to align the threshold and image matrices
 
         for (int j = 0; j < thresh_size; j++) // iteraotr for the threhold matrix
         {
-            if (j && j % thresh_width == 0)
+            if (j && j % col == 0)
             {
                 i = (i - thresh_width) + row_step;
             }
@@ -906,11 +908,19 @@ bool TargaImage::Dither_Cluster()
             }
             i = i + 4;
         }
-        if (i % row_step != 0)
+        if (i % row_step != 0) // if we aren't at the rightward edge, then move kernal over to right
         {
             // move kernal to right one
             i = i - (row_step * (row - 1));
         }
+    }
+
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        data[i] = (unsigned char)floor(new_array[i] * 256);
+        data[i + 1] = (unsigned char)floor(new_array[i + 1] * 256);
+        data[i + 2] = (unsigned char)floor(new_array[i + 2] * 256);
+        data[i + 3] = (unsigned char)floor(new_array[i + 3]);
     }
 
 
