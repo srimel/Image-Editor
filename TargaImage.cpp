@@ -735,12 +735,300 @@ bool TargaImage::Dither_Random()
 //
 //      Perform Floyd-Steinberg dithering on the image.  Return success of 
 //  operation.
+/*
+
+    e = Iacc(i,j) - t, where t = 0 if Iacc(i,j) <= 0.5
+
+    Iacc(i + 1, j) = Iacc(i + 1, j) + 7/16e
+    Iacc(i + 1, j + 1) = Iacc(i + 1, j + 1) + 1/16e
+    Iacc(i, j + 1) = Iacc(i, j + 1) + 5/16e
+    Iacc(i - 1, j + 1) = Iacc(i - 1, j + 1) + 3/16e
+
+
+*/
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Dither_FS()
 {
-    ClearToBlack();
-    return false;
+    // convert to grayscale
+    const int size = (width * height) * 4;
+
+    To_Grayscale();
+
+    // convert data to floating point values
+    float* new_array = new float[size];
+    float* ranked = new float[width * height];
+    int j = 0;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        new_array[i] = data[i] / (float)256;
+        new_array[i+1] = data[i+1] / (float)256;
+        new_array[i+2] = data[i+2] / (float)256;
+        new_array[i+3] = (float) data[i+3]; // leaves alpha channel alone
+
+        ranked[j++] = data[i] / (float)256;
+    }
+
+    std::sort(ranked, ranked + (width * height));
+
+
+    double total = 0.0;
+    double count = 0;
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        total += (double) new_array[i];
+        count++;
+    }
+
+    double average = total / count;
+    std::cout << "Average: " << average << std::endl;
+    //double percentile = 1 - average;
+    double percentile = 0.5;
+    std::cout << "Percentile: " << percentile << std::endl;
+
+    int h_index = (int) ceil(percentile * (count + 1));
+    int l_index = (int) floor(percentile * (count + 1));
+    float thresh1 = ranked[h_index];
+    float thresh2 = ranked[l_index];
+    //float threshold = (thresh1 + thresh2) / 2;
+    //float threshold = average;
+    float threshold = 0.5;
+
+    std::cout << "Threshold: " << threshold << std::endl;
+
+    int row_skip = width * 4;
+    //const float threshold = 0.5; // I guess we just use this?
+    const float white = 255 / (float)256;
+
+    // neighbor coefficients
+    const float rn_cof = 7 / float(16);
+    const float rdn_cof = 1 / float(16);
+    const float dn_cof = 5 / float(16);
+    const float ldn_cof = 3 / float(16);
+
+
+    bool forward = true;
+    int i = 0;
+    int depth = 0;
+    while(i < (size - 4))
+    {
+        float t = 0.0;
+        bool last_column = (i + 4) % row_skip == 0;
+        bool first_column = (i % row_skip) == 0;
+        bool last_row = depth == (height - 1);
+
+        // dither current pixel, set t
+        if (new_array[i] <= threshold)
+        {
+            new_array[i] = 0;
+            new_array[i + 1] = 0;
+            new_array[i + 2] = 0;
+            t = 0;
+            
+        }
+        else
+        {
+            new_array[i] = white;
+            new_array[i + 1] = white;
+            new_array[i + 2] = white;
+            t = 1;
+        }
+
+        // calculate the error
+        float e = new_array[i] - t;
+
+        // now need to spread error to neighbors, 3 cases
+
+        //int rn = 0, rdn = 0, dn = 0, ldn = 0; // indices of neighbors
+
+		int rn = i + 4;
+		int rdn = (i + 4) + row_skip;
+		int dn = i + row_skip;
+        int ldn = (i - 4) + row_skip;
+        int ln = i - 4;
+
+        if (first_column)
+        {
+            // indices of neighbors
+            if (forward)
+            {
+                if(!last_row)
+                { 
+					new_array[rn] += rn_cof * e;
+					new_array[rn + 1] += rn_cof * e;
+					new_array[rn + 2] += rn_cof * e;
+
+					new_array[rdn] += rdn_cof * e;
+					new_array[rdn + 1] += rdn_cof * e;
+					new_array[rdn + 2] += rdn_cof * e;
+
+					new_array[dn] += dn_cof * e;
+					new_array[dn + 1] += dn_cof * e;
+					new_array[dn + 2] += dn_cof * e;
+                }
+                else
+					new_array[rn] += rn_cof * e;
+					new_array[rn + 1] += rn_cof * e;
+					new_array[rn + 2] += rn_cof * e;
+            }
+            else
+            {
+                if (!last_row)
+                {
+					new_array[dn] += dn_cof * e;
+					new_array[dn + 1] += dn_cof * e;
+					new_array[dn + 2] += dn_cof * e;
+
+					new_array[rdn] += ldn_cof * e; // flipped for backwards
+					new_array[rdn + 1] += ldn_cof * e; // flipped for backwards
+					new_array[rdn + 2] += ldn_cof * e; // flipped for backwards
+                }
+                else
+					break; // otherwise, halt.
+            }
+        }
+        else if (last_column)
+        {
+            if (forward)
+            {
+                if (!last_row)
+                {
+                    new_array[dn] += dn_cof * e;
+                    new_array[dn + 1] += dn_cof * e;
+                    new_array[dn + 2] += dn_cof * e;
+
+                    new_array[ldn] += ldn_cof * e;
+                    new_array[ldn + 1] += ldn_cof * e;
+                    new_array[ldn + 2] += ldn_cof * e;
+                }
+                else
+                    break; // otherwise, halt.
+            }
+            else
+            {
+                if (!last_row)
+                {
+                    new_array[ln] += rn_cof * e;    // flipped
+                    new_array[ln + 1] += rn_cof * e;    // flipped
+                    new_array[ln + 2] += rn_cof * e;    // flipped
+
+                    new_array[ldn] += rdn_cof * e;  // flipped
+                    new_array[ldn + 1] += rdn_cof * e;  // flipped
+                    new_array[ldn + 2] += rdn_cof * e;  // flipped
+                    
+                    new_array[dn] += dn_cof * e;
+                    new_array[dn + 1] += dn_cof * e;
+                    new_array[dn + 2] += dn_cof * e;
+                }
+                else
+                {
+                    new_array[ln] += rn_cof * e;
+                    new_array[ln + 1] += rn_cof * e;
+                    new_array[ln + 2] += rn_cof * e;
+                }
+            }
+        }
+        else
+        {
+            if (forward)
+            {
+                if (!last_row)
+                {
+                    new_array[rn] += rn_cof * e;
+                    new_array[rn + 1] += rn_cof * e;
+                    new_array[rn + 2] += rn_cof * e;
+
+                    new_array[rdn] += rdn_cof * e;
+                    new_array[rdn + 1] += rdn_cof * e;
+                    new_array[rdn + 2] += rdn_cof * e;
+
+                    new_array[dn] += dn_cof * e;
+                    new_array[dn + 1] += dn_cof * e;
+                    new_array[dn + 2] += dn_cof * e;
+
+                    new_array[ldn] += ldn_cof * e;
+                    new_array[ldn + 1] += ldn_cof * e;
+                    new_array[ldn + 2] += ldn_cof * e;
+                }
+                else
+                {
+                    new_array[rn] += rn_cof * e;
+                    new_array[rn + 1] += rn_cof * e;
+                    new_array[rn + 2] += rn_cof * e;
+                }
+            }
+            else
+            {
+                if (!last_row)
+                {
+                    new_array[ln] += rn_cof * e; // flipped
+                    new_array[ln + 1] += rn_cof * e; // flipped
+                    new_array[ln + 2] += rn_cof * e; // flipped
+
+                    new_array[rdn] += ldn_cof * e; // flipped
+                    new_array[rdn + 1] += ldn_cof * e; // flipped
+                    new_array[rdn + 2] += ldn_cof * e; // flipped
+
+                    new_array[dn] += dn_cof * e;
+                    new_array[dn + 1] += dn_cof * e;
+                    new_array[dn + 2] += dn_cof * e;
+
+                    new_array[ldn] += rdn_cof * e; // flipped
+                    new_array[ldn + 1] += rdn_cof * e; // flipped
+                    new_array[ldn + 2] += rdn_cof * e; // flipped
+                }
+                else
+                {
+                    new_array[ln] += rn_cof * e;
+                    new_array[ln + 1] += rn_cof * e;
+                    new_array[ln + 2] += rn_cof * e;
+                }
+            }
+        }
+
+        if (forward)
+        {
+            if (!last_column)
+            {
+                i = i + 4;
+            }
+            else
+            {
+                i = i + row_skip;
+                forward = false;
+                depth++;
+            }
+        }
+        else
+        {
+            if (!first_column)
+            {
+				i = i - 4;
+            }
+            else
+            {
+                i = i + row_skip;
+                forward = true;
+                depth++;
+
+            }
+        }
+    }
+
+    delete[] data;
+    data = nullptr;
+    data = new unsigned char[size];
+
+    for (int i = 0; i < (size - 4); i = i + 4)
+    {
+        data[i] = (unsigned char)floor(new_array[i] * 256);
+        data[i + 1] = (unsigned char)floor(new_array[i + 1] * 256);
+        data[i + 2] = (unsigned char)floor(new_array[i + 2] * 256);
+        data[i + 3] = (unsigned char)floor(new_array[i + 3]);
+    }
+
+    delete[] new_array;
+    return true;
 }// Dither_FS
 
 
@@ -773,6 +1061,8 @@ bool TargaImage::Dither_Bright()
         ranked[i+2] = data[i+2] / (float)256;
         ranked[i+3] = (float) data[i+3]; // leaves alpha channel alone
     }
+
+    //std::sort(ranked, ranked + size);
 
     delete[] data;
     data = nullptr;
