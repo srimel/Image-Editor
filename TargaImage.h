@@ -112,6 +112,8 @@ struct color
     void increment();
     void printColor() const;
     unsigned char r;
+
+    // data
     unsigned char g;
     unsigned char b;
     int count;
@@ -125,7 +127,7 @@ struct twoD_array
     void getFromFloat(unsigned char*& output) const;
     void getFloats();
 
-
+    // data
     int row;
     int col;
     int size;
@@ -133,8 +135,10 @@ struct twoD_array
     float ** data2;
 };
 
+void applyFilter(float** image, int r, int c, float ** filter, int filter_size);
+
 bool compareColors(const color& lhs, const color& rhs);
 
-#endif
 
+#endif
 

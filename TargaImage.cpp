@@ -1459,32 +1459,66 @@ bool TargaImage::Filter_Box()
     twoD_array targus(data, width, height);
     targus.getFloats();
 
-    float x = 1.0 / 9.0;
-    float box[3][3] = {
-        {x, x, x},
-        {x, x, x},
-        {x, x, x}
-    };
-
+    float x = 1.0 / 25.0;
     /*
-    int i = 4;
-    while (i < targus.row - 1)
-    {
-        int j = 4;
-        while (j < targus.col - 4)
-        {
-            float value;
-
-        }
-    }
+		const float box[5][5] = {
+			{x, x, x, x, x},
+			{x, x, x, x, x},
+			{x, x, x, x, x},
+			{x, x, x, x, x},
+			{x, x, x, x, x}
+		};
     */
 
+    float** box = new float* [5];
+    for (int i = 0; i < 5; i++)
+    {
+        box[i] = new float[5];
+        for (int j = 0; j < 5; j++)
+        {
+            box[i][j] = x;
+        }
+    }
+
+    for (int i = 2; i < (targus.row - 2); i++)
+    {
+        for (int j = 8; j < (targus.col - 8); j = j + 4)
+        {
+			applyFilter(targus.data2, i, j, box, 5);
+        }
+    }
 
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
     return true;
 }// Filter_Box
+
+void applyFilter(float** image, int r, int c, float ** filter, int filter_size)
+{
+
+    int middle = (int) floor(filter_size / 2);
+
+	float r_value = 0.0;
+	float g_value = 0.0;
+	float b_value = 0.0;
+
+    for (int i = 0, p = r - middle; i < filter_size; i++, p++)
+    {
+        // for each of these iterations, I need to advance q by a pixel (4)
+        int q = c - (middle * 4);
+        for (int j = 0; j < filter_size; j++)
+        {
+            r_value = r_value + (image[p][q] * filter[i][j]);
+            g_value = g_value + (image[p][q + 1] * filter[i][j]);
+            b_value = b_value + (image[p][q + 2] * filter[i][j]);
+            q = q + 4;
+        }
+    }
+	image[r][c] = r_value;
+	image[r][c + 1] = g_value;
+	image[r][c + 2] = b_value;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
