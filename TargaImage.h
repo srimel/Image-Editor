@@ -122,6 +122,8 @@ struct twoD_array
     twoD_array(const unsigned char * image, const int w, const int h);
     ~twoD_array();
     void get1D(unsigned char*& output) const;
+    void getFromFloat(unsigned char*& output) const;
+    void getFloats();
 
 
     int row;

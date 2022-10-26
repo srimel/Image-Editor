@@ -1035,27 +1035,21 @@ twoD_array::twoD_array(const unsigned char* input, const int w, const int h) : r
 {
     size = (w * h) * 4;
     data1 = new unsigned char* [row];
-    data2 = new float * [row];
+    data2 = nullptr;
     int k = 0;
     for (int i = 0; i < row; i++)
     {
         data1[i] = new unsigned char[col];
-        data2[i] = new float[col];
         for (int j = 0; j < col; j = j + 4)
         {
             data1[i][j] = input[k];
             data1[i][j + 1] = input[k + 1];
             data1[i][j + 2] = input[k + 2];
             data1[i][j + 3] = input[k + 3];
-
-            data2[i][j] = input[k] / (float)256;
-            data2[i][j] = input[k + 1] / (float)256;
-            data2[i][j] = input[k + 2] / (float)256;
-            data2[i][j] = (float) input[k];
             k = k + 4;
         }
     }
-    int size = (w * h) * 4;
+    getFloats();
 }
 
 twoD_array::~twoD_array()
@@ -1078,9 +1072,43 @@ void twoD_array::get1D(unsigned char*& output) const
         for (int j = 0; j < col; j = j + 4)
         {
             output[k] = data1[i][j];
+            output[k + 1] = data1[i][j + 1];
+            output[k + 2] = data1[i][j + 2];
+            output[k + 3] = data1[i][j + 3];
             k = k + 4;
         }
     }
+}
+
+void twoD_array::getFloats()
+{
+    data2 = new float * [row];
+    for (int i = 0; i < row; i++)
+    {
+        data2[i] = new float[col];
+        for (int j = 0; j < col; j = j + 4)
+        {
+            data2[i][j] = data1[i][j] / float(256);
+            data2[i][j + 1] = data1[i][j + 1] / float(256);
+            data2[i][j + 2] = data1[i][j + 2] / float(256);
+            data2[i][j + 3] = (float) data1[i][j + 3];
+        }
+    }
+}
+
+void twoD_array::getFromFloat(unsigned char*& output) const
+{
+    for (int i = 0; i < row; i++)
+    {
+        for (int j = 0; j < col; j = j + 4)
+        {
+            data1[i][j] = (unsigned char)floor(data2[i][j] * 256);
+            data1[i][j + 1] = (unsigned char)floor(data2[i][j + 1] * 256);
+            data1[i][j + 2] = (unsigned char)floor(data2[i][j + 2] * 256);
+            data1[i][j + 3] = (unsigned char) data2[i][j + 3];
+        }
+    }
+    get1D(output);
 }
 
 
@@ -1418,12 +1446,44 @@ bool TargaImage::Difference(TargaImage* pImage)
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Perform 5x5 box filter on this image.  Return success of operation.
+/*
+        All of these operations should modify the current image, and assume color images. 
+        The alpha channel should NOT be filtered. The alpha channel for all the test images will 
+        be 1 for all pixels, so you do not need to worry about the differences between filtering regular 
+        pixels or pre-multiplied pixels. Implement whichever approach you prefer.
+*/
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Filter_Box()
 {
-    ClearToBlack();
-    return false;
+    twoD_array targus(data, width, height);
+    targus.getFloats();
+
+    float x = 1.0 / 9.0;
+    float box[3][3] = {
+        {x, x, x},
+        {x, x, x},
+        {x, x, x}
+    };
+
+    /*
+    int i = 4;
+    while (i < targus.row - 1)
+    {
+        int j = 4;
+        while (j < targus.col - 4)
+        {
+            float value;
+
+        }
+    }
+    */
+
+
+    delete[] data;
+    data = nullptr;
+    targus.getFromFloat(data);
+    return true;
 }// Filter_Box
 
 
