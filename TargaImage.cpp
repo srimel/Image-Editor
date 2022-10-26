@@ -1488,6 +1488,7 @@ bool TargaImage::Filter_Box()
         }
     }
 
+    // TODO: delete box
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
@@ -1535,8 +1536,9 @@ bool TargaImage::Filter_Bartlett()
 
     float x = 1.0 / 81.0;
 
-    float v[5] = { 1 , 2 , 3, 2, 1};
+    float v[5] = { 1 , 2 , 3, 2, 1}; // need 5x5 bartlett
 
+    // generate bartlett
     float** box = new float* [5];
     for (int i = 0; i < 5; i++)
     {
@@ -1548,18 +1550,7 @@ bool TargaImage::Filter_Bartlett()
         }
     }
 
-    // Test print for filter
-    /*
-    for (int i = 0; i < 5; i++)
-    {
-        for (int j = 0; j < 5; j++)
-        {
-            std::cout << box[i][j] << ", ";
-        }
-        std::cout << std::endl;
-    }
-    */
-
+    // apply the filter
     for (int i = 2; i < (targus.row - 2); i++)
     {
         for (int j = 8; j < (targus.col - 8); j = j + 4)
@@ -1568,6 +1559,7 @@ bool TargaImage::Filter_Bartlett()
         }
     }
 
+    // TODO: delete the box
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
@@ -1583,8 +1575,26 @@ bool TargaImage::Filter_Bartlett()
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Filter_Gaussian()
 {
-    ClearToBlack();
-    return false;
+    twoD_array targus(data, width, height);
+    targus.getFloats();
+
+    float** gauss = nullptr;;
+    makeGaussian(5, gauss); // makes a 5x5 gaussian
+
+    // apply the filter
+    for (int i = 2; i < (targus.row - 2); i++)
+    {
+        for (int j = 8; j < (targus.col - 8); j = j + 4)
+        {
+			applyFilter(targus.data2, i, j, gauss, 5);
+        }
+    }
+
+    // TODO: delete gauss
+    delete[] data;
+    data = nullptr;
+    targus.getFromFloat(data);
+    return true;
 }// Filter_Gaussian
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1599,6 +1609,100 @@ bool TargaImage::Filter_Gaussian_N( unsigned int N )
     ClearToBlack();
    return false;
 }// Filter_Gaussian_N
+
+void makeGaussian(int N, float**& filter)
+{
+    // need to to get the pascal row here
+    float * pascal_row = nullptr;
+    getPascalRow(pascal_row, N);
+
+    float total = 0.0;
+    filter = new float* [N];
+    for (int i = 0; i < N; i++)
+    {
+        filter[i] = new float[N];
+        for (int j = 0; j < N; j++)
+        {
+            if (pascal_row)
+            {
+                filter[i][j] = pascal_row[i] * pascal_row[j];
+                total += filter[i][j];
+            }
+            else
+                return;
+        }
+    }
+
+    float ratio = 1.0 / total;
+
+    // int print
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            std::cout << filter[i][j] << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    // float print
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            filter[i][j] *= ratio;
+            std::cout << filter[i][j] << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    delete[] pascal_row;
+}
+
+void getPascalRow(float*& result, int size)
+{
+    if (size < 3)
+    {
+        result = nullptr;
+        return;
+    }
+
+    float** pt = new float* [size];
+    for (int i = 0; i < size; i++)
+    {
+        pt[i] = new float[size];
+        for (int j = 0; j < size; j++)
+        {
+            pt[i][j] = 1;
+        }
+    }
+
+    int i = 2;
+    while (i < size)
+    {
+        int j = 1;
+        while (j < i)
+        {
+            pt[i][j] = pt[i - 1][j - 1] + pt[i - 1][j];
+            j += 1;
+        }
+        i += 1;
+    }
+
+    result = new float[size];
+    for (int i = 0; i < size; i++)
+    {
+        result[i] = pt[size - 1][i];
+    }
+
+    for (int i = 0; i < size; i++)
+    {
+        delete[] pt[i];
+    }
+    delete[] pt;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

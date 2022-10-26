@@ -139,6 +139,9 @@ void applyFilter(float** image, int r, int c, float ** filter, int filter_size);
 
 bool compareColors(const color& lhs, const color& rhs);
 
+void makeGaussian(int N, float**& filter);
+void getPascalRow(float*& result, int size);
+
 
 #endif
 
