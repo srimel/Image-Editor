@@ -1606,8 +1606,28 @@ bool TargaImage::Filter_Gaussian()
 
 bool TargaImage::Filter_Gaussian_N( unsigned int N )
 {
-    ClearToBlack();
-   return false;
+    twoD_array targus(data, width, height);
+    targus.getFloats();
+
+    float** gauss = nullptr;;
+    makeGaussian(N, gauss); // makes a 5x5 gaussian
+
+    // just need to set i and j appropriately
+    int middle = (int) floor(N/2);
+
+    for (int i = middle; i < (targus.row - middle); i++)
+    {
+        for (int j = (middle * 4); j < (targus.col - (middle * 4)); j = j + 4)
+        {
+			applyFilter(targus.data2, i, j, gauss, N);
+        }
+    }
+
+    // TODO: delete gauss
+    delete[] data;
+    data = nullptr;
+    targus.getFromFloat(data);
+   return true;
 }// Filter_Gaussian_N
 
 void makeGaussian(int N, float**& filter)
