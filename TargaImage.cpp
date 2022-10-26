@@ -1529,8 +1529,49 @@ void applyFilter(float** image, int r, int c, float ** filter, int filter_size)
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::Filter_Bartlett()
 {
-    ClearToBlack();
-    return false;
+
+    twoD_array targus(data, width, height);
+    targus.getFloats();
+
+    float x = 1.0 / 81.0;
+
+    float v[5] = { 1 , 2 , 3, 2, 1};
+
+    float** box = new float* [5];
+    for (int i = 0; i < 5; i++)
+    {
+        box[i] = new float[5];
+        for (int j = 0; j < 5; j++)
+        {
+            box[i][j] = v[i] * v[j];
+            box[i][j] *= x;
+        }
+    }
+
+    // Test print for filter
+    /*
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 5; j++)
+        {
+            std::cout << box[i][j] << ", ";
+        }
+        std::cout << std::endl;
+    }
+    */
+
+    for (int i = 2; i < (targus.row - 2); i++)
+    {
+        for (int j = 8; j < (targus.col - 8); j = j + 4)
+        {
+			applyFilter(targus.data2, i, j, box, 5);
+        }
+    }
+
+    delete[] data;
+    data = nullptr;
+    targus.getFromFloat(data);
+    return true;
 }// Filter_Bartlett
 
 
