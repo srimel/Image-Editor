@@ -1031,6 +1031,58 @@ bool TargaImage::Dither_FS()
     return true;
 }// Dither_FS
 
+twoD_array::twoD_array(const unsigned char* input, const int w, const int h) : row(h), col(w * 4)
+{
+    size = (w * h) * 4;
+    data1 = new unsigned char* [row];
+    data2 = new float * [row];
+    int k = 0;
+    for (int i = 0; i < row; i++)
+    {
+        data1[i] = new unsigned char[col];
+        data2[i] = new float[col];
+        for (int j = 0; j < col; j = j + 4)
+        {
+            data1[i][j] = input[k];
+            data1[i][j + 1] = input[k + 1];
+            data1[i][j + 2] = input[k + 2];
+            data1[i][j + 3] = input[k + 3];
+
+            data2[i][j] = input[k] / (float)256;
+            data2[i][j] = input[k + 1] / (float)256;
+            data2[i][j] = input[k + 2] / (float)256;
+            data2[i][j] = (float) input[k];
+            k = k + 4;
+        }
+    }
+    int size = (w * h) * 4;
+}
+
+twoD_array::~twoD_array()
+{
+    for (int i = 0; i < row; i++)
+    {
+        delete[] data1[i];
+        delete[] data2[i];
+    }
+    delete[] data1;
+    delete[] data2;
+}
+
+void twoD_array::get1D(unsigned char*& output) const
+{
+    output = new unsigned char[size];
+    int k = 0;
+    for (int i = 0; i < row; i++)
+    {
+        for (int j = 0; j < col; j = j + 4)
+        {
+            output[k] = data1[i][j];
+            k = k + 4;
+        }
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //

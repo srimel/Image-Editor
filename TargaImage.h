@@ -117,6 +117,20 @@ struct color
     int count;
 };
 
+struct twoD_array
+{
+    twoD_array(const unsigned char * image, const int w, const int h);
+    ~twoD_array();
+    void get1D(unsigned char*& output) const;
+
+
+    int row;
+    int col;
+    int size;
+    unsigned char** data1;
+    float ** data2;
+};
+
 bool compareColors(const color& lhs, const color& rhs);
 
 #endif
