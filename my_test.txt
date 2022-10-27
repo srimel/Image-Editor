@@ -1,22 +1,111 @@
 load clean/colors-for-bw.tga
 gray
+save output/results/colors-for-bw-gray.tga
 diff result/colors-for-bw-gray.tga
-save output/gray_diff.tga
+save output/diffs/colors-gray_diff.tga
 
 load clean/church.tga
 quant-unif
+save output/results/church-unif.tga
 diff result/church-quant-unif.tga
-save output/quant-unif_diff1.tga
+save output/diffs/church-unif-diff.tga
 
 load clean/wiz.tga
 quant-unif
+save output/results/wiz-unif.tga
 diff result/wiz-quant-unif.tga
-save output/wiz-unif_diff1.tga
+save output/diffs/wiz-unif-diff.tga
 
 load clean/wiz.tga
 quant-pop
+save output/results/wiz-pop.tga
 diff result/wiz-quant-pop.tga
-save output/wiz-pop-diff1.tga
+save output/diffs/wiz-pop-diff.tga
+
+load clean/church.tga
+quant-pop
+save output/results/church-pop.tga
+diff result/church-quant-pop.tga
+save output/diffs/church-pop-diff.tga
+
+load clean/church.tga
+dither-thresh
+save output/results/church-dither.tga
+diff result/church-dither-thresh.tga
+save output/diffs/church-dither-thresh.tga
+
+load clean/church.tga
+dither-rand
+save output/results/church-dither-rand.tga
+diff result/church-dither-rand.tga
+save output/diffs/church-dither-rand.tga
+
+load clean/church.tga
+dither-fs
+save output/results/church-dither-fs.tga
+diff result/church-dither-fs.tga
+save output/diffs/church-dither-fs.tga
+
+load clean/church.tga
+dither-bright
+save output/results/church-dither-bright.tga
+diff result/church-dither-bright.tga
+save output/diffs/church-dither-bright.tga
+
+load clean/church.tga
+dither-cluster
+save output/results/church-dither-cluster.tga
+diff result/church-dither-cluster.tga
+save output/diffs/church-dither-cluster.tga
+
+load clean/church.tga
+filter-box
+save output/results/church-filter-box.tga
+diff result/church-filter-box.tga
+save output/diffs/church-filter-box.tga
+
+load clean/checkers.tga
+filter-box
+save output/results/checkers-filter-box.tga
+diff result/checkers-filter-box.tga
+save output/diffs/checkers-filter-box.tga
+
+load clean/church.tga
+filter-bartlett
+save output/results/church-filter-bartlett.tga
+diff result/church-filter-bartlett.tga
+save output/diffs/church-filter-bartlett.tga
+
+load clean/checkers.tga
+filter-bartlett
+save output/results/checkers-filter-bartlett.tga
+diff result/checkers-filter-bartlett.tga
+save output/diffs/checkers-filter-bartlett.tga
+
+load clean/church.tga
+filter-gauss
+save output/results/church-filter-gauss.tga
+diff result/church-filter-gauss.tga
+save output/diffs/church-filter-gauss.tga
+
+load clean/checkers.tga
+filter-gauss
+save output/results/checkers-filter-gauss.tga
+diff result/checkers-filter-gauss.tga
+save output/diffs/checkers-filter-gauss.tga
+
+load clean/church.tga
+filter-gauss-n 9
+save output/results/church-filter-gauss-n.tga
+diff result/church-filter-gauss-n.tga
+save output/diffs/church-filter-gauss-n.tga
+
+load clean/checkers.tga
+filter-gauss-n 11
+save output/results/checkers-filter-gauss-n.tga
+diff result/checkers-filter-gauss-n.tga
+save output/diffs/checkers-filter-gauss-n.tga
+
 
 end
 
