@@ -818,6 +818,7 @@ bool TargaImage::Dither_FS()
         bool last_row = depth == (height - 1);
 
         // dither current pixel, set t
+        float old_value = 0.0;
         if (new_array[i] <= threshold)
         {
             new_array[i] = 0;
@@ -835,7 +836,7 @@ bool TargaImage::Dither_FS()
         }
 
         // calculate the error
-        float e = new_array[i] - t;
+        float e = old_value - t;
 
         // now need to spread error to neighbors, 3 cases
 
