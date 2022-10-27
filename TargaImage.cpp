@@ -757,7 +757,6 @@ bool TargaImage::Dither_FS()
 
     // convert data to floating point values
     float* new_array = new float[size];
-    float* ranked = new float[width * height];
     int j = 0;
     for (int i = 0; i < (size - 4); i = i + 4)
     {
@@ -766,35 +765,9 @@ bool TargaImage::Dither_FS()
         new_array[i+2] = data[i+2] / (float)256;
         new_array[i+3] = (float) data[i+3]; // leaves alpha channel alone
 
-        ranked[j++] = data[i] / (float)256;
     }
 
-    std::sort(ranked, ranked + (width * height));
-
-
-    double total = 0.0;
-    double count = 0;
-    for (int i = 0; i < (size - 4); i = i + 4)
-    {
-        total += (double) new_array[i];
-        count++;
-    }
-
-    double average = total / count;
-    std::cout << "Average: " << average << std::endl;
-    //double percentile = 1 - average;
-    double percentile = 0.5;
-    std::cout << "Percentile: " << percentile << std::endl;
-
-    int h_index = (int) ceil(percentile * (count + 1));
-    int l_index = (int) floor(percentile * (count + 1));
-    float thresh1 = ranked[h_index];
-    float thresh2 = ranked[l_index];
-    //float threshold = (thresh1 + thresh2) / 2;
-    //float threshold = average;
     float threshold = 0.5;
-
-    std::cout << "Threshold: " << threshold << std::endl;
 
     int row_skip = width * 4;
     //const float threshold = 0.5; // I guess we just use this?
@@ -805,7 +778,6 @@ bool TargaImage::Dither_FS()
     const float rdn_cof = 1 / float(16);
     const float dn_cof = 5 / float(16);
     const float ldn_cof = 3 / float(16);
-
 
     bool forward = true;
     int i = 0;
@@ -818,7 +790,7 @@ bool TargaImage::Dither_FS()
         bool last_row = depth == (height - 1);
 
         // dither current pixel, set t
-        float old_value = 0.0;
+        float old_value = new_array[i];
         if (new_array[i] <= threshold)
         {
             new_array[i] = 0;
@@ -839,9 +811,6 @@ bool TargaImage::Dither_FS()
         float e = old_value - t;
 
         // now need to spread error to neighbors, 3 cases
-
-        //int rn = 0, rdn = 0, dn = 0, ldn = 0; // indices of neighbors
-
 		int rn = i + 4;
 		int rdn = (i + 4) + row_skip;
 		int dn = i + row_skip;
