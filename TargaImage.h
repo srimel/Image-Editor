@@ -1,3 +1,6 @@
+// Modified by Stuart Rimel for CS547 Program #1
+// 10/26/22 
+// 
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      TargaImage.h                            Author:     Stephen Chenney
@@ -33,17 +36,17 @@ class TargaImage
         bool Save_Image(const char*);               // save the image to a file
         static TargaImage* Load_Image(char*);       // Load a file and return a pointer to a new TargaImage object.  Returns NULL on failure
 
-        bool To_Grayscale();
+        bool To_Grayscale();                            // done 5
 
-        bool Quant_Uniform();
-        bool Quant_Populosity();
+        bool Quant_Uniform();                           // done 5 
+        bool Quant_Populosity();                        // done 20
         bool Quant_Median();
 
-        bool Dither_Threshold();
-        bool Dither_Random();
-        bool Dither_FS();
-        bool Dither_Bright();
-        bool Dither_Cluster();
+        bool Dither_Threshold();                        // done 3
+        bool Dither_Random();                           // done 5
+        bool Dither_FS();                               // done 15
+        bool Dither_Bright();                           // done 7
+        bool Dither_Cluster();                          // done 10
         bool Dither_Color();
 
         bool Comp_Over(TargaImage* pImage);
@@ -54,12 +57,12 @@ class TargaImage
 
         bool Difference(TargaImage* pImage);
 
-        bool Filter_Box();
-        bool Filter_Bartlett();
-        bool Filter_Gaussian();
-        bool Filter_Gaussian_N(unsigned int N);
+        bool Filter_Box();                              // done 15
+        bool Filter_Bartlett();                         // done 3
+        bool Filter_Gaussian();                         // done 3
+        bool Filter_Gaussian_N(unsigned int N);         // done 10
         bool Filter_Edge();
-        bool Filter_Enhance();
+        bool Filter_Enhance();                          // Total Possible Points = 101
 
         bool NPR_Paint();
 
@@ -81,8 +84,8 @@ class TargaImage
 		// Draws a filled circle according to the stroke data
         void Paint_Stroke(const Stroke& s);
 
+        // helper functions
         void LogColorSpace(const unsigned char* space, const int size) const;
-
         // gets the manhattan distance from rgb1 to rgb2 
         double getDistance(unsigned char r1, unsigned char g1, unsigned char b1, const unsigned char r2, const unsigned char g2, const unsigned char b2);
 
@@ -135,10 +138,9 @@ struct twoD_array
     float ** data2;
 };
 
+// Utility Functions
 void applyFilter(float** image, int r, int c, float ** filter, int filter_size);
-
 bool compareColors(const color& lhs, const color& rhs);
-
 void makeGaussian(int N, float**& filter);
 void getPascalRow(float*& result, int size);
 

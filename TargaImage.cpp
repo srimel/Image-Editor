@@ -1,3 +1,6 @@
+// Modified by Stuart Rimel for CS547 Program #1
+// 10/26/22 
+//
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      TargaImage.cpp                          Author:     Stephen Chenney
@@ -363,16 +366,6 @@ bool TargaImage::Quant_Uniform()
         data[i + 2] = b_space[b];
     }
 
-    // Uncomment to print new color spaces to conosole.
-		std::cout << "New R space: ";
-		LogColorSpace(r_space, 8);
-
-		std::cout << "New G space: ";
-		LogColorSpace(g_space, 8);
-
-		std::cout << "New B space: ";
-		LogColorSpace(b_space, 4);
-
     return true;
 }// Quant_Uniform
 
@@ -484,14 +477,6 @@ bool TargaImage::Quant_Populosity()
         b_space_32[j] = b_average;
     }
 
-    std::cout << "Printing 32-level color spaces" << std::endl;
-    std::cout << "New R space: ";
-	LogColorSpace(r_space_32, 32);
-	std::cout << "New G space: ";
-	LogColorSpace(g_space_32, 32);
-	std::cout << "New B space: ";
-	LogColorSpace(b_space_32, 32);
-
     // Applies the uniform quantization:
     //   This needs to be applied to a copy of the image, since
     //   we need to perserve the original color values for the end step.
@@ -515,6 +500,7 @@ bool TargaImage::Quant_Populosity()
     }
 
     std::cout << "\n\nApplying populosity algorithm...\n\nPlease wait..." << std::endl;
+    std::cout << "\n\nSorry, this may take a second... it will not crash! ...\n\n" << std::endl;
 
     std::vector<color> histogram;
     for (int i = 0; i < (size - 4); i = i + 4)
@@ -568,7 +554,7 @@ bool TargaImage::Quant_Populosity()
 
     }
 
-    std::cout << "\nQuantization complete. Enjoy your new image :)" << std::endl;
+    std::cout << "\n\nQuantization complete. Enjoy your new image :)\n\n" << std::endl;
 
     delete[] copy_image;
     return true;
@@ -994,7 +980,7 @@ bool TargaImage::Dither_FS()
         data[i] = (unsigned char)floor(new_array[i] * 256);
         data[i + 1] = (unsigned char)floor(new_array[i + 1] * 256);
         data[i + 2] = (unsigned char)floor(new_array[i + 2] * 256);
-        data[i + 3] = (unsigned char)floor(new_array[i + 3]);
+        data[i + 3] = (unsigned char) new_array[i + 3];
     }
 
     delete[] new_array;
@@ -1127,17 +1113,13 @@ bool TargaImage::Dither_Bright()
     }
 
     double average = total / count;
-    std::cout << "Average: " << average << std::endl;
     double percentile = 1 - average;
-    std::cout << "Percentile: " << percentile << std::endl;
 
     int h_index = (int) ceil(percentile * (count + 1));
     int l_index = (int) floor(percentile * (count + 1));
     float thresh1 = ranked[h_index];
     float thresh2 = ranked[l_index];
     float threshold = (thresh1 + thresh2) / 2;
-    std::cout << "Threshold: " << threshold << std::endl;
-
 
     std::sort(ranked, ranked + size);
 
@@ -1163,7 +1145,6 @@ bool TargaImage::Dither_Bright()
         count2++;
     }
     float average2 = total2 / count2;
-    std::cout << "Average2 = " << average2 / (float)256 << std::endl;
 
     delete[] new_array;
     delete[] ranked;
@@ -1260,7 +1241,7 @@ bool TargaImage::Dither_Cluster()
         data[i] = (unsigned char)floor(new_array[i] * 256);
         data[i + 1] = (unsigned char)floor(new_array[i + 1] * 256);
         data[i + 2] = (unsigned char)floor(new_array[i + 2] * 256);
-        data[i + 3] = (unsigned char)floor(new_array[i + 3]);
+        data[i + 3] = (unsigned char) new_array[i + 3];
     }
 
 
@@ -1430,15 +1411,6 @@ bool TargaImage::Filter_Box()
     targus.getFloats();
 
     float x = 1.0 / 25.0;
-    /*
-		const float box[5][5] = {
-			{x, x, x, x, x},
-			{x, x, x, x, x},
-			{x, x, x, x, x},
-			{x, x, x, x, x},
-			{x, x, x, x, x}
-		};
-    */
 
     float** box = new float* [5];
     for (int i = 0; i < 5; i++)
@@ -1458,10 +1430,16 @@ bool TargaImage::Filter_Box()
         }
     }
 
-    // TODO: delete box
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
+
+    for (int i = 0; i < 5; i++)
+    {
+        delete[] box[i];
+    }
+    delete[] box;
+
     return true;
 }// Filter_Box
 
@@ -1529,10 +1507,16 @@ bool TargaImage::Filter_Bartlett()
         }
     }
 
-    // TODO: delete the box
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
+
+    for (int i = 0; i < 5; i++)
+    {
+        delete[] box[i];
+    }
+    delete[] box;
+
     return true;
 }// Filter_Bartlett
 
@@ -1560,10 +1544,16 @@ bool TargaImage::Filter_Gaussian()
         }
     }
 
-    // TODO: delete gauss
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
+
+    for (int i = 0; i < 5; i++)
+    {
+        delete[] gauss[i];
+    }
+    delete[] gauss;
+
     return true;
 }// Filter_Gaussian
 
@@ -1597,6 +1587,13 @@ bool TargaImage::Filter_Gaussian_N( unsigned int N )
     delete[] data;
     data = nullptr;
     targus.getFromFloat(data);
+
+    for (int i = 0; i < N; i++)
+    {
+        delete[] gauss[i];
+    }
+    delete[] gauss;
+
    return true;
 }// Filter_Gaussian_N
 
@@ -1625,27 +1622,12 @@ void makeGaussian(int N, float**& filter)
 
     float ratio = 1.0 / total;
 
-    // int print
-    for (int i = 0; i < N; i++)
-    {
-        for (int j = 0; j < N; j++)
-        {
-            std::cout << filter[i][j] << ", ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    // float print
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < N; j++)
         {
             filter[i][j] *= ratio;
-            std::cout << filter[i][j] << ", ";
         }
-        std::cout << std::endl;
     }
 
     delete[] pascal_row;

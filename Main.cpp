@@ -1,3 +1,6 @@
+// Modified by Stuart Rimel for CS547 Program #1
+// 10/26/22 
+//
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Main.cpp                                Author:     Stephen Chenney
